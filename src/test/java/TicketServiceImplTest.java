@@ -1,10 +1,14 @@
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import thirdparty.paymentgateway.TicketPaymentServiceImpl;
 import thirdparty.seatbooking.SeatReservationServiceImpl;
 import uk.gov.dwp.uc.pairtest.TicketServiceImpl;
 import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest;
+
+import static org.mockito.Mockito.when;
 
 public class TicketServiceImplTest {
 
@@ -13,7 +17,13 @@ public class TicketServiceImplTest {
     @BeforeClass
     public static void setup() {
 
-        ticketService = new TicketServiceImpl(new TicketPaymentServiceImpl(), new SeatReservationServiceImpl());
+
+
+        TicketPaymentServiceImpl ticketPaymentService = Mockito.mock(TicketPaymentServiceImpl.class);;
+        SeatReservationServiceImpl seatReservationService =        Mockito.mock(SeatReservationServiceImpl.class);
+        //when(ticketPaymentService.makePayment(2L, )
+
+        ticketService = new TicketServiceImpl(ticketPaymentService, seatReservationService);
     }
 
     @Test

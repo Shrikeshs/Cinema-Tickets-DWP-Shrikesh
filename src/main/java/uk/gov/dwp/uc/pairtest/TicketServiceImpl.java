@@ -32,13 +32,14 @@ public class TicketServiceImpl implements TicketService {
     public void purchaseTickets(Long accountId, TicketTypeRequest... ticketTypeRequests) throws InvalidPurchaseException {
 
         if (Objects.isNull(ticketTypeRequests)) {
+
             throw new IllegalArgumentException("sdasd");
         }
         LOGGER.info("TicketServiceImpl : Processing TicketTypeRequest of length "
-                 + ticketTypeRequests.length);
+                + ticketTypeRequests.length);
         preflightChecks(ticketTypeRequests.length, accountId);
-        Map<TicketTypeRequest.Type, Integer> typeIntegerMap = buildType(ticketTypeRequests);
-        validateRequests(typeIntegerMap);
+        Map<TicketTypeRequest.Type, Integer> typeNumTicketsMap = buildTypeNumTicketsMap(ticketTypeRequests);
+        validateRequests(typeNumTicketsMap);
 
 //                        Considers the above objective, business rules, constraints & assumptions.
 //
@@ -51,9 +52,9 @@ public class TicketServiceImpl implements TicketService {
 //                        Rejects any invalid ticket purchase requests.
 //                        It is up to you to identify what should be deemed as an invalid purchase request.
 
-        int totalCost = calculateTotalAmountToPay(typeIntegerMap);
+        int totalCost = calculateTotalAmountToPay(typeNumTicketsMap);
         ticketPaymentService.makePayment(accountId, totalCost);
-        seatReservationService.reserveSeat(accountId, getTotalSeatsToAllocate(typeIntegerMap));
+        seatReservationService.reserveSeat(accountId, getTotalSeatsToAllocate(typeNumTicketsMap));
 
     }
 
@@ -80,14 +81,17 @@ public class TicketServiceImpl implements TicketService {
         }
     }
 
-    private int calculateTotalAmountToPay(Map<TicketTypeRequest.Type, Integer> typeIntegerMap) {
-        return (typeIntegerMap.getOrDefault(TicketTypeRequest.Type.ADULT, 0) * ADULT_TICKET_COST) +
-                (typeIntegerMap.getOrDefault(TicketTypeRequest.Type.CHILD, 0) * CHILD_TICKET_COST);
+    private int calculateTotalAmountToPay(Map<TicketTypeRequest.Type, Integer> typeNumTicketsMap) {
+        return (typeNumTicketsMap.getOrDefault(TicketTypeRequest.Type.ADULT, 0) * ADULT_TICKET_COST) +
+                (typeNumTicketsMap.getOrDefault(TicketTypeRequest.Type.CHILD, 0) * CHILD_TICKET_COST);
     }
 
-    private Map<TicketTypeRequest.Type, Integer> buildType(TicketTypeRequest... ticketTypeRequests) {
-        return Arrays.stream(ticketTypeRequests).collect(Collectors.toMap(TicketTypeRequest::getTicketType,
-                TicketTypeRequest::getNoOfTickets, Integer::sum));
+    private Map<TicketTypeRequest.Type, Integer> buildTypeNumTicketsMap(TicketTypeRequest... ticketTypeRequests) {
+        return Arrays.stream(ticketTypeRequests)
+                .collect(Collectors.toMap(
+                        TicketTypeRequest::getTicketType,
+                        TicketTypeRequest::getNoOfTickets,
+                        Integer::sum));
     }
 
 }
