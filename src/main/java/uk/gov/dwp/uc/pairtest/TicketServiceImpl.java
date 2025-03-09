@@ -58,10 +58,12 @@ public class TicketServiceImpl implements TicketService {
      */
     private void preFlightChecks(Long accountId, TicketTypeRequest... ticketTypeRequests) {
         if (Objects.isNull(ticketTypeRequests)) {
+            LOGGER.warning("preFlightChecks : ticketTypeRequests is null");
             throw new InvalidPurchaseException("purchaseTickets : The Given ticketTypeRequests is null");
         }
 
         if (accountId <= 0) {
+            LOGGER.warning("preFlightChecks : Account Id is lesser than or equal to 0");
             throw new InvalidPurchaseException("Error in processing User account ID");
         }
     }
@@ -88,12 +90,15 @@ public class TicketServiceImpl implements TicketService {
         Integer infantTicketCount = typeNumTicketsMap.getOrDefault(TicketTypeRequest.Type.INFANT, 0);
         int totalTicketCount = typeNumTicketsMap.values().stream().mapToInt(ticket -> ticket).sum();
         if (adultTicketCount < 0 || childTicketCount < 0 || infantTicketCount < 0) {
+            LOGGER.warning("validateRequests : Negative ticket counts encountered");
             throw new InvalidPurchaseException("Error! Ticket count should be bigger than 0");
         }
         if (totalTicketCount > 25) {
+            LOGGER.warning("validateRequests : Request of More than 25 tickets");
             throw new InvalidPurchaseException("Server has reached maximum number of requests to be processed");
         }
         if ((childTicketCount > 0 || infantTicketCount > 0) && adultTicketCount == 0) {
+            LOGGER.warning("validateRequests : Infant or Child tickets without an Adult Ticket");
             throw new InvalidPurchaseException("Sorry! Please ensure Adult tickets are booked " +
                     "along with Child or Infant tickets");
         }
