@@ -22,70 +22,98 @@ public class TicketServiceImpl implements TicketService {
     private final int CHILD_TICKET_COST = 15;
     private final Logger LOGGER = Logger.getLogger(TicketServiceImpl.class.getName());
 
-    public TicketServiceImpl(TicketPaymentServiceImpl ticketPaymentService, SeatReservationServiceImpl seatReservationService) {
+    public TicketServiceImpl(TicketPaymentServiceImpl ticketPaymentService,
+                             SeatReservationServiceImpl seatReservationService) {
         this.ticketPaymentService = ticketPaymentService;
         this.seatReservationService = seatReservationService;
     }
 
-
+    /**
+     * Method to purchase tickets given account id and type of ticket.
+     *
+     * @param accountId          Account Id of the purchaser
+     * @param ticketTypeRequests Array of TicketTypRequests
+     * @throws InvalidPurchaseException
+     */
     @Override
     public void purchaseTickets(Long accountId, TicketTypeRequest... ticketTypeRequests) throws InvalidPurchaseException {
-
-        if (Objects.isNull(ticketTypeRequests)) {
-
-            throw new IllegalArgumentException("sdasd");
-        }
-        LOGGER.info("TicketServiceImpl : Processing TicketTypeRequest of length "
+        preFlightChecks(accountId, ticketTypeRequests);
+        LOGGER.info("purchaseTickets : Processing TicketTypeRequest of length "
                 + ticketTypeRequests.length);
-        preflightChecks(ticketTypeRequests.length, accountId);
         Map<TicketTypeRequest.Type, Integer> typeNumTicketsMap = buildTypeNumTicketsMap(ticketTypeRequests);
         validateRequests(typeNumTicketsMap);
-
-//                        Considers the above objective, business rules, constraints & assumptions.
-//
-//                        Calculates the correct amount for the requested tickets and makes a
-//                        payment request to the `TicketPaymentService
-//
-//                        Calculates the correct no of seats to reserve and
-//                        makes a seat reservation request to the `SeatReservationService
-//
-//                        Rejects any invalid ticket purchase requests.
-//                        It is up to you to identify what should be deemed as an invalid purchase request.
-
         int totalCost = calculateTotalAmountToPay(typeNumTicketsMap);
+        LOGGER.info("purchaseTickets : Processing payment request for account ID: " + accountId);
         ticketPaymentService.makePayment(accountId, totalCost);
+        LOGGER.info("purchaseTickets : Processing seat reservation request for account ID: " + accountId);
         seatReservationService.reserveSeat(accountId, getTotalSeatsToAllocate(typeNumTicketsMap));
 
     }
 
-    private int getTotalSeatsToAllocate(Map<TicketTypeRequest.Type, Integer> typeIntegerMap) {
-        return typeIntegerMap.getOrDefault(TicketTypeRequest.Type.ADULT, 0) +
-                typeIntegerMap.getOrDefault(TicketTypeRequest.Type.CHILD, 0);
-    }
+    /**
+     * Method to perform checks required prior to processing the request.
+     *
+     * @param accountId          Account Id of the purchaser
+     * @param ticketTypeRequests Array of TicketTypRequests
+     */
+    private void preFlightChecks(Long accountId, TicketTypeRequest... ticketTypeRequests) {
+        if (Objects.isNull(ticketTypeRequests)) {
+            throw new InvalidPurchaseException("purchaseTickets : The Given ticketTypeRequests is null");
+        }
 
-    private void validateRequests(Map<TicketTypeRequest.Type, Integer> typeIntegerMap) {
-        Integer adultTicketCount = typeIntegerMap.getOrDefault(TicketTypeRequest.Type.ADULT, 0);
-        Integer childTicketCount = typeIntegerMap.getOrDefault(TicketTypeRequest.Type.CHILD, 0);
-        Integer infantTicketCount = typeIntegerMap.getOrDefault(TicketTypeRequest.Type.INFANT, 0);
-        if ((childTicketCount > 0 && adultTicketCount == 0) || (infantTicketCount > 0 && adultTicketCount == 0)) {
-            throw new IllegalArgumentException("Server has reached maximum number of requests to be processed");
+        if (accountId <= 0) {
+            throw new InvalidPurchaseException("Error in processing User account ID");
         }
     }
 
-    private void preflightChecks(int requestLength, Long accountId) {
-        if (requestLength > 25) {
-            throw new IllegalArgumentException("Server has reached maximum number of requests to be processed");
+    /**
+     * Method to calculate the total number of  seated to be allocated
+     *
+     * @param typeNumTicketsMap Map of Ticket type to number of tickets to be purchased
+     * @return Total number of seats to be allocated.
+     */
+    private int getTotalSeatsToAllocate(Map<TicketTypeRequest.Type, Integer> typeNumTicketsMap) {
+        return typeNumTicketsMap.getOrDefault(TicketTypeRequest.Type.ADULT, 0) +
+                typeNumTicketsMap.getOrDefault(TicketTypeRequest.Type.CHILD, 0);
+    }
+
+    /**
+     * Method to validate requests according to the given constraints.
+     *
+     * @param typeNumTicketsMap Map of Ticket type to number of tickets to be purchased
+     */
+    private void validateRequests(Map<TicketTypeRequest.Type, Integer> typeNumTicketsMap) {
+        Integer adultTicketCount = typeNumTicketsMap.getOrDefault(TicketTypeRequest.Type.ADULT, 0);
+        Integer childTicketCount = typeNumTicketsMap.getOrDefault(TicketTypeRequest.Type.CHILD, 0);
+        Integer infantTicketCount = typeNumTicketsMap.getOrDefault(TicketTypeRequest.Type.INFANT, 0);
+        int totalTicketCount = typeNumTicketsMap.values().stream().mapToInt(ticket -> ticket).sum();
+        if (adultTicketCount < 0 || childTicketCount < 0 || infantTicketCount < 0) {
+            throw new InvalidPurchaseException("Error! Ticket count should be bigger than 0");
         }
-        if (accountId < 0) {
-            throw new IllegalArgumentException("sdasd");
+        if (totalTicketCount > 25) {
+            throw new InvalidPurchaseException("Server has reached maximum number of requests to be processed");
+        }
+        if ((childTicketCount > 0 || infantTicketCount > 0) && adultTicketCount == 0) {
+            throw new InvalidPurchaseException("Sorry! Please ensure Adult tickets are booked " +
+                    "along with Child or Infant tickets");
         }
     }
 
+    /**
+     * Method to calculate th total amount to pay ( Infants ticket cost 0)
+     *
+     * @param typeNumTicketsMap Map of  Ticket type to number of tickets to be purchased
+     * @return integer value of total amount to pay
+     */
     private int calculateTotalAmountToPay(Map<TicketTypeRequest.Type, Integer> typeNumTicketsMap) {
         return (typeNumTicketsMap.getOrDefault(TicketTypeRequest.Type.ADULT, 0) * ADULT_TICKET_COST) +
                 (typeNumTicketsMap.getOrDefault(TicketTypeRequest.Type.CHILD, 0) * CHILD_TICKET_COST);
     }
 
+    /**
+     * @param ticketTypeRequests var args of TicketTypeRequest
+     * @return Map of  Ticket type to number of tickets to be purchased
+     */
     private Map<TicketTypeRequest.Type, Integer> buildTypeNumTicketsMap(TicketTypeRequest... ticketTypeRequests) {
         return Arrays.stream(ticketTypeRequests)
                 .collect(Collectors.toMap(
