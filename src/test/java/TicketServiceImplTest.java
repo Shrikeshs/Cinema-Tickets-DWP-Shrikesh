@@ -8,6 +8,10 @@ import uk.gov.dwp.uc.pairtest.TicketServiceImpl;
 import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest;
 import uk.gov.dwp.uc.pairtest.exception.InvalidPurchaseException;
 
+import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doNothing;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -83,6 +87,11 @@ public class TicketServiceImplTest {
                 new TicketTypeRequest(TicketTypeRequest.Type.CHILD, 10),
                 new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 5));
 
+        Map<TicketTypeRequest.Type, Integer> typeIntegerMap = buildTypeNumTicketsMap(
+                new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 10),
+                new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 10),
+                new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 5));
+
 
     }
 
@@ -107,5 +116,12 @@ public class TicketServiceImplTest {
         return tickets;
     }
 
+    private Map<TicketTypeRequest.Type, Integer> buildTypeNumTicketsMap(TicketTypeRequest... ticketTypeRequests) {
+        return Arrays.stream(ticketTypeRequests)
+                .collect(Collectors.toMap(
+                        TicketTypeRequest::getTicketType,
+                        TicketTypeRequest::getNoOfTickets,
+                        Integer::sum));
+    }
 
 }
