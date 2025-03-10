@@ -87,12 +87,6 @@ public class TicketServiceImplTest {
                 new TicketTypeRequest(TicketTypeRequest.Type.CHILD, 10),
                 new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 5));
 
-        Map<TicketTypeRequest.Type, Integer> typeIntegerMap = buildTypeNumTicketsMap(
-                new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 10),
-                new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 10),
-                new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 5));
-
-
     }
 
     private TicketTypeRequest[] getTicketTypeRequests() {
@@ -114,14 +108,6 @@ public class TicketServiceImplTest {
         tickets[0] = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 50);
         tickets[1] = new TicketTypeRequest(TicketTypeRequest.Type.CHILD, 3);
         return tickets;
-    }
-
-    private Map<TicketTypeRequest.Type, Integer> buildTypeNumTicketsMap(TicketTypeRequest... ticketTypeRequests) {
-        return Arrays.stream(ticketTypeRequests)
-                .collect(Collectors.toMap(
-                        TicketTypeRequest::getTicketType,
-                        TicketTypeRequest::getNoOfTickets,
-                        Integer::sum));
     }
 
 }

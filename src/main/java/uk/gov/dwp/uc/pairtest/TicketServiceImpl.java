@@ -115,7 +115,9 @@ public class TicketServiceImpl implements TicketService {
                 (typeNumTicketsMap.getOrDefault(TicketTypeRequest.Type.CHILD, 0) * CHILD_TICKET_COST);
     }
 
-    /** Method to build HashMap of
+    /**
+     * Method to build HashMap of Ticket Type -> Number of Tickets to be purchased.
+     *
      * @param ticketTypeRequests var args of TicketTypeRequest
      * @return Map of  Ticket type to number of tickets to be purchased
      */
